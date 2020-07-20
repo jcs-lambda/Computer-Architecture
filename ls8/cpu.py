@@ -90,8 +90,13 @@ class CPU:
         while self.__running__:
             # initialize intruction register and any operands
             self.ir = self.ram_read(self.pc)
-            # execute instruction
-            if self.__OPCODES__[self.ir]():
+            if self.ir & 0b100000 > 0:
+                # ALU operation
+                pass
+            else:
+                # execute instruction
+                self.__OPCODES__[self.ir]()
+            if self.ir & 0b10000 == 0:
                 # move to next instruction
                 self.pc += 1
 
