@@ -12,7 +12,7 @@
 - [X] Implement the `CPU` constructor
 - [X] Add RAM functions `ram_read()` and `ram_write()`
 - [X] Implement the core of `run()`
-- [ ] Implement the `HLT` instruction handler
+- [X] Implement the `HLT` instruction handler
 - [ ] Add the `LDI` instruction
 - [ ] Add the `PRN` instruction
 

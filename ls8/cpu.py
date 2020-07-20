@@ -2,7 +2,6 @@
 
 import sys
 
-
 class CPU:
     """Main CPU class."""
 
@@ -10,7 +9,11 @@ class CPU:
     __IM__ = 5
     __IS__ = 6
     __SP__ = 7
-    __OPCODES__ = {}
+
+    def __init_opcodes__(self):
+        self.__OPCODES__ = {
+            0b00000001: self.HLT,
+        }
 
     def __init__(self):
         """Construct a new CPU."""
@@ -33,6 +36,8 @@ class CPU:
 
         # initialize stack pointer
         self.reg[7] = self.__STACK_BASE__
+
+        self.__init_opcodes__()
 
     def load(self):
         """Load a program into memory."""
@@ -99,6 +104,10 @@ class CPU:
             if self.ir & 0b10000 == 0:
                 # move to next instruction
                 self.pc += 1
+
+    # OPCODES
+    def HLT(self):
+        self.__running__ = False
 
     # memory address register, points to address in ram
     # for target of read / write operations
