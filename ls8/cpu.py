@@ -13,6 +13,7 @@ class CPU:
     def __init_opcodes__(self):
         self.__OPCODES__ = {
             0b00000001: self.HLT,
+            0b10000010: self.LDI,
         }
 
     def __init__(self):
@@ -108,6 +109,11 @@ class CPU:
     # OPCODES
     def HLT(self):
         self.__running__ = False
+    
+    def LDI(self):
+        assert self.operand_a > 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        self.reg[self.operand_a] = self.operand_b
 
     # memory address register, points to address in ram
     # for target of read / write operations
@@ -177,11 +183,11 @@ class CPU:
     def ram_read(self, mar):
         """Returns a byte from ram."""
         self.mar = mar
-        self.mad = self.ram[self.mar]
-        return self.mad
+        self.mdr = self.ram[self.mar]
+        return self.mdr
     
-    def ram_write(self, mar, mad):
+    def ram_write(self, mar, mdr):
         """Writes a byte to ram."""
         self.mar = mar
-        self.mad = mad
-        self.ram[self.mar] = self.mad
+        self.mdr = mdr
+        self.ram[self.mar] = self.mdr
