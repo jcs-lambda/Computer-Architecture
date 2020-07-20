@@ -91,9 +91,9 @@ class CPU:
             # initialize intruction register and any operands
             self.ir = self.ram_read(self.pc)
             # execute instruction
-            self.__OPCODES__[self.ir]()
-            # move to next instruction
-            self.pc += 1
+            if self.__OPCODES__[self.ir]():
+                # move to next instruction
+                self.pc += 1
 
     # memory address register, points to address in ram
     # for target of read / write operations
