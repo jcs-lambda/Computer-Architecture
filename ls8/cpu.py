@@ -19,11 +19,14 @@ class CPU:
         # SP = stack pointer = registers[7]
         self.reg = [0] * 8
         # program counter, instruction register,
-        # memory address register, memory data register
-        self.pc = self.ir = self.mar = self.mdr = 0
+        self.pc = self.ir = 0
         # flags 00000LGE
         # less than, greater than, equal
         self.fl = 0
+
+        # initialze memory read/write registers
+        self.__memory_address_register__ = 0
+        self.__memory_data_register__ = 0
 
         # initialize stack pointer
         self.reg[7] = CPU.__STACK_BASE__
@@ -81,4 +84,45 @@ class CPU:
     def run(self):
         """Run the CPU."""
         pass
-            
+
+    # memory address register, points to address in ram
+    # for target of read / write operations
+    @property
+    def mar(self):
+        return self.__memory_address_register__
+
+    @mar.setter
+    def mar(self, address):
+        assert address >=0 and address < len(self.ram), \
+            '__memory_address_register__ out of range'
+        self.__memory_address_register__ = address & 0xFF
+    
+    @mar.deleter
+    def mar(self):
+        self.__memory_address_register__ = 0
+    
+    # memory data register, hold value read from or to write to
+    # ram[memory address register] in read/write operations
+    @property
+    def mdr(self):
+        return self.__memory_data_register__
+    
+    @mdr.setter
+    def mdr(self, value):
+        self.__memory_data_register__ = value & 0xFF
+
+    @mdr.deleter
+    def mdr(self):
+        self.__memory_data_register__ = 0
+
+    def ram_read(self, mar):
+        """Returns a byte from ram."""
+        self.mar = mar
+        self.mad = self.ram[self.mar]
+        return self.mad
+    
+    def ram_write(self, mar, mad):
+        """Writes a byte to ram."""
+        self.mar = mar
+        self.mad = mad
+        self.ram[self.mar] = self.mad
