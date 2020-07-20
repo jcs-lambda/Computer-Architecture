@@ -10,6 +10,7 @@ class CPU:
     __IM__ = 5
     __IS__ = 6
     __SP__ = 7
+    __OPCODES__ = {}
 
     def __init__(self):
         """Construct a new CPU."""
@@ -18,18 +19,20 @@ class CPU:
         # IS = interrupt status = registers[6]
         # SP = stack pointer = registers[7]
         self.reg = [0] * 8
-        # program counter, instruction register,
-        self.pc = self.ir = 0
         # flags 00000LGE
         # less than, greater than, equal
         self.fl = 0
+
+        # initialze program counter / instruction register
+        self.__program_counter__ = 0
+        self.__instruction_register__ = 0
 
         # initialze memory read/write registers
         self.__memory_address_register__ = 0
         self.__memory_data_register__ = 0
 
         # initialize stack pointer
-        self.reg[7] = CPU.__STACK_BASE__
+        self.reg[7] = self.__STACK_BASE__
 
     def load(self):
         """Load a program into memory."""
@@ -83,7 +86,14 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        self.__running__ = True
+        while self.__running__:
+            # initialize intruction register and any operands
+            self.ir = self.ram_read(self.pc)
+            # execute instruction
+            self.__OPCODES__[self.ir]()
+            # move to next instruction
+            self.pc += 1
 
     # memory address register, points to address in ram
     # for target of read / write operations
@@ -114,6 +124,41 @@ class CPU:
     @mdr.deleter
     def mdr(self):
         self.__memory_data_register__ = 0
+
+    # program counter, points to next instruction to be executed
+    @property
+    def pc(self):
+        return self.__program_counter__
+
+    @pc.setter
+    def pc(self, value):
+        assert value < self.reg[self.__SP__], \
+            'program counter cannot point into stack'
+        self.__program_counter__ = value & 0xFF
+
+    @pc.deleter
+    def pc(self):
+        self.__program_counter__ = 0
+
+    # instruction register, holds the currently executing opcode
+    @property
+    def ir(self):
+        return self.__instruction_register__
+    
+    @ir.setter
+    def ir(self, opcode):
+        assert opcode in self.__OPCODES__, \
+            'unknown opcode'
+        self.__instruction_register__ = opcode
+        # load potential operands
+        self.operand_a = self.ram_read(self.pc + 1)
+        self.operand_b = self.ram_read(self.pc + 2)
+        # move program counter past any operands
+        self.pc += (opcode >> 6)
+
+    @ir.deleter
+    def ir(self):
+        self.__instruction_register__ = 0
 
     def ram_read(self, mar):
         """Returns a byte from ram."""
