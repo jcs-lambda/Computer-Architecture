@@ -44,8 +44,15 @@ class CPU:
 
     def load(self, filename):
         """Load a program into memory."""
-        pass
-    
+        with open(filename, 'r') as f:
+            program = f.read()
+        
+        address = 0
+        for match in re.finditer(r'^[01]{8}', program, re.MULTILINE):
+            instruction = match.group()
+            self.ram_write(address, int(instruction, 2))
+            address += 1
+
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
