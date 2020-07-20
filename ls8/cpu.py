@@ -16,6 +16,7 @@ class CPU:
             0b00000001: self.HLT,
             0b10000010: self.LDI,
             0b01000111: self.PRN,
+            0b10100010: self.MUL,
         }
 
     def __init__(self):
@@ -58,9 +59,12 @@ class CPU:
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
-        # elif op == "SUB": etc
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
+
+        self.reg[reg_a] &= 0xFF
 
     def trace(self):
         """
@@ -90,7 +94,7 @@ class CPU:
             self.ir = self.ram_read(self.pc)
             if self.ir & 0b100000 > 0:
                 # ALU operation
-                pass
+                self.__OPCODES__[self.ir]()
             else:
                 # execute instruction
                 self.__OPCODES__[self.ir]()
@@ -111,6 +115,13 @@ class CPU:
         assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
             f'invalid register: {self.operand_a}'
         print(self.reg[self.operand_a])
+
+    def MUL(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        assert self.operand_b >= 0 and self.operand_b < len(self.reg), \
+            f'invalid register: {self.operand_b}'
+        self.alu('MUL', self.operand_a, self.operand_b)
 
     # memory address register, points to address in ram
     # for target of read / write operations
