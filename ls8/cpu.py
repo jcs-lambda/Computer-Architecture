@@ -14,6 +14,7 @@ class CPU:
         self.__OPCODES__ = {
             0b00000001: self.HLT,
             0b10000010: self.LDI,
+            0b01000111: self.PRN,
         }
 
     def __init__(self):
@@ -111,9 +112,14 @@ class CPU:
         self.__running__ = False
     
     def LDI(self):
-        assert self.operand_a > 0 and self.operand_a < len(self.reg), \
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
             f'invalid register: {self.operand_a}'
         self.reg[self.operand_a] = self.operand_b
+
+    def PRN(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        print(self.reg[self.operand_a])
 
     # memory address register, points to address in ram
     # for target of read / write operations

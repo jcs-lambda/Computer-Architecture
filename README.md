@@ -14,7 +14,7 @@
 - [X] Implement the core of `run()`
 - [X] Implement the `HLT` instruction handler
 - [X] Add the `LDI` instruction
-- [ ] Add the `PRN` instruction
+- [X] Add the `PRN` instruction
 
 ### Day 2: Add the ability to load files dynamically, get `mult.ls8` running
 
