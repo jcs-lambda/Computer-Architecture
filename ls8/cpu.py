@@ -25,8 +25,23 @@ class CPU:
             0b10100000: self.ADD,
             0b10100111: self.CMP,
             0b01010101: self.JEQ,
-            0b01010110: self.JNE,
+            0b01011010: self.JGE,
+            0b01010111: self.JGT,
+            0b01011001: self.JLE,
+            0b01011000: self.JLT,
             0b01010100: self.JMP,
+            0b01010110: self.JNE,
+            0b10101000: self.AND,
+            0b01100110: self.DEC,
+            0b10100011: self.DIV,
+            0b01100101: self.INC,
+            0b10100100: self.MOD,
+            0b01101001: self.NOT,
+            0b10101010: self.OR,
+            0b10101100: self.SHL,
+            0b10101101: self.SHR,
+            0b10100001: self.SUB,
+            0b10101011: self.XOR,
         }
 
     def __init__(self):
@@ -78,6 +93,28 @@ class CPU:
                 self.fl = 0b010
             elif self.reg[reg_a] > self.reg[reg_b]:
                 self.fl = 0b100
+        elif op == "AND":
+            self.reg[reg_a] &= self.reg[reg_b]
+        elif op == "DEC":
+            self.reg[reg_a] -= 1
+        elif op == "DIV":
+            self.reg[reg_a] //= self.reg[reg_b]
+        elif op == "INC":
+            self.reg[reg_a] += 1
+        elif op == "MOD":
+            self.reg[reg_a] %= self.reg[reg_b]
+        elif op == "NOT":
+            self.reg[reg_a] = ~self.reg[reg_a]
+        elif op == "OR":
+            self.reg[reg_a] |= self.reg[reg_b]
+        elif op == "SHL":
+            self.reg[reg_a] << self.reg[reg_b]
+        elif op == "SHR":
+            self.reg[reg_a] >> self.reg[reg_b]
+        elif op == "SUB":
+            self.reg[reg_a] -= self.reg[reg_b]
+        elif op == "XOR":
+            self.reg[reg_a] ^= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -182,13 +219,133 @@ class CPU:
         self.alu('CMP', self.operand_a, self.operand_b)
 
     def JEQ(self):
-        pass
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        if self.fl & 0b1:
+            self.pc = self.reg[self.operand_a]
+        else:
+            self.pc += 1
 
-    def JNE(self):
-        pass
+    def JGE(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        if self.fl & 0b11:
+            self.pc = self.reg[self.operand_a]
+        else:
+            self.pc += 1
+
+    def JGT(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        if self.fl & 0b10:
+            self.pc = self.reg[self.operand_a]
+        else:
+            self.pc += 1
+
+    def JLE(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        if self.fl & 0b101:
+            self.pc = self.reg[self.operand_a]
+        else:
+            self.pc += 1
+
+    def JLT(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        if self.fl & 0b100:
+            self.pc = self.reg[self.operand_a]
+        else:
+            self.pc += 1
 
     def JMP(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        self.pc = self.reg[self.operand_a]
+
+    def JNE(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        if not self.fl & 0b1:
+            self.pc = self.reg[self.operand_a]
+        else:
+            self.pc += 1
         pass
+
+    def AND(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        assert self.operand_b >= 0 and self.operand_b < len(self.reg), \
+            f'invalid register: {self.operand_b}'
+        self.alu('AND', self.operand_a, self.operand_b)
+
+    def DEC(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        self.alu('DEC', self.operand_a, self.operand_b)
+
+    def DIV(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        assert self.operand_b >= 0 and self.operand_b < len(self.reg), \
+            f'invalid register: {self.operand_b}'
+        assert self.reg[self.operand_b] != 0, \
+            'divide by zero'
+        self.alu('DIV', self.operand_a, self.operand_b)
+
+    def INC(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        self.alu('INC', self.operand_a, self.operand_b)
+
+    def MOD(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        assert self.operand_b >= 0 and self.operand_b < len(self.reg), \
+            f'invalid register: {self.operand_b}'
+        assert self.reg[self.operand_b] != 0, \
+            'divide by zero'
+        self.alu('MOD', self.operand_a, self.operand_b)
+
+    def NOT(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        self.alu('NOT', self.operand_a, self.operand_b)
+
+    def OR(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        assert self.operand_b >= 0 and self.operand_b < len(self.reg), \
+            f'invalid register: {self.operand_b}'
+        self.alu('OR', self.operand_a, self.operand_b)
+
+    def SHL(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        assert self.operand_b >= 0 and self.operand_b < len(self.reg), \
+            f'invalid register: {self.operand_b}'
+        self.alu('SHL', self.operand_a, self.operand_b)
+
+    def SHR(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        assert self.operand_b >= 0 and self.operand_b < len(self.reg), \
+            f'invalid register: {self.operand_b}'
+        self.alu('SHR', self.operand_a, self.operand_b)
+
+    def SUB(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        assert self.operand_b >= 0 and self.operand_b < len(self.reg), \
+            f'invalid register: {self.operand_b}'
+        self.alu('SUB', self.operand_a, self.operand_b)
+
+    def XOR(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        assert self.operand_b >= 0 and self.operand_b < len(self.reg), \
+            f'invalid register: {self.operand_b}'
+        self.alu('XOR', self.operand_a, self.operand_b)
 
     # memory address register, points to address in ram
     # for target of read / write operations
