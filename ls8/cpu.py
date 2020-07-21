@@ -8,9 +8,9 @@ class CPU:
     """Main CPU class."""
 
     __STACK_BASE__ = 0xf4
-    __IM__ = 5
-    __IS__ = 6
-    __SP__ = 7
+    __IM__ = 5  # interrupt mask
+    __IS__ = 6  # interrupt status
+    __SP__ = 7  # stack pointer
 
     def __init_opcodes__(self):
         self.__OPCODES__ = {
@@ -46,6 +46,8 @@ class CPU:
             0b10000100: self.ST,
             0b00000000: self.NOP,
             0b01001000: self.PRA,
+            0b01010010: self.INT,
+            0b00010011: self.IRET,
         }
 
     def __init__(self):
@@ -77,11 +79,19 @@ class CPU:
         with open(filename, 'r') as f:
             program = f.read()
 
-        address = 0
-        for match in re.finditer(r'^[01]{8}', program, re.MULTILINE):
+        for address, match in enumerate(
+            re.finditer(r'^[01]{8}', program, re.MULTILINE)
+        ):
+            assert address < self.__STACK_BASE__, \
+                'program too large to fit in memory'
             instruction = match.group()
             self.ram_write(address, int(instruction, 2))
-            address += 1
+
+        # set default empty interrupt handlers
+        self.ram_write(0xF7, 0b00010011)  # IRET opcode into reserved memory
+        for address in range(0xF8, 0x100):  # for each interrupt vector
+            self.ram_write(address, 0xF7)  # point to IRET in reserved memory
+        
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -94,9 +104,9 @@ class CPU:
             if self.reg[reg_a] == self.reg[reg_b]:
                 self.fl = 0b001
             elif self.reg[reg_a] < self.reg[reg_b]:
-                self.fl = 0b010
-            elif self.reg[reg_a] > self.reg[reg_b]:
                 self.fl = 0b100
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                self.fl = 0b010
         elif op == "AND":
             self.reg[reg_a] &= self.reg[reg_b]
         elif op == "DEC":
@@ -148,6 +158,8 @@ class CPU:
         """Run the CPU."""
         self.__running__ = True
         while self.__running__:
+            self.check_interrupts()
+
             # initialize intruction register and any operands
             self.ir = self.ram_read(self.pc)
             if self.ir & 0b100000 > 0:
@@ -159,6 +171,25 @@ class CPU:
             if self.ir & 0b10000 == 0:
                 # move to next instruction
                 self.pc += 1
+
+    def check_interrupts(self):
+        """Checks and handles pending interupts."""
+        maskedInterrupts = self.reg[self.__IM__] & self.reg[self.__IS__]
+        for interrupt in range(8):
+            bit = 1 << interrupt
+            if maskedInterrupts & bit:  # if interrupt is triggered
+                self.__OLD_IM__ = self.reg[self.__IM__]  # save interrupt state
+                self.reg[self.__IM__] = 0  # disable interrupts
+                self.reg[self.__IS__] &= (255 ^ bit)  # clear interrupt
+                self.reg[self.__SP__] -= 1  # push program counter
+                self.ram_write(self.reg[self.__SP__], self.pc + 1)
+                self.reg[self.__SP__] -= 1  # push flags
+                self.ram_write(self.reg[self.__SP__], self.fl)
+                for i in range(7):  # push R0-R6
+                    self.reg[self.__SP__] -= 1
+                    self.ram_write(self.reg[self.__SP__], self.reg[i])
+                self.pc = self.ram[0xF8 + interrupt]  # pc <- handler
+                break  # stop checking interrupts
 
     # OPCODES
     def HLT(self):
@@ -373,6 +404,23 @@ class CPU:
             f'invalid register: {self.operand_a}'
         print(chr(self.reg[self.operand_a]), end='')
 
+    def INT(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        assert self.reg[self.operand_a] <= 7, \
+            f'invalid interrupt: {self.reg[self.operand_a]}'
+        self.reg[self.__IS__] |= (1 << self.reg[self.operand_a])
+
+    def IRET(self):
+        for i in range(6, -1, -1):  # pop R6-R0
+            self.reg[i] = self.ram_read(self.reg[self.__SP__])
+            self.reg[self.__SP__] += 1
+        self.fl = self.ram_read(self.reg[self.__SP__])  # pop flags
+        self.reg[self.__SP__] += 1
+        self.pc = self.ram_read(self.reg[self.__SP__])  # pop program counter
+        self.reg[self.__SP__] += 1
+        self.reg[self.__IM__] = self.__OLD_IM__  # enable interrupts
+
     # memory address register, points to address in ram
     # for target of read / write operations
     @property
@@ -410,7 +458,7 @@ class CPU:
 
     @pc.setter
     def pc(self, value):
-        assert value < self.reg[self.__SP__], \
+        assert value < self.reg[self.__SP__] or value == 0xF7, \
             'program counter cannot point into stack'
         self.__program_counter__ = value & 0xFF
 
@@ -426,7 +474,7 @@ class CPU:
     @ir.setter
     def ir(self, opcode):
         assert opcode in self.__OPCODES__, \
-            'unknown opcode'
+            f'unknown opcode: {opcode:08b} at {self.pc}'
         self.__instruction_register__ = opcode
         # load potential operands
         self.operand_a = self.ram_read(self.pc + 1)
