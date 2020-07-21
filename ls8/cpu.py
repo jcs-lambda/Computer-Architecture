@@ -21,6 +21,7 @@ class CPU:
             0b01000101: self.PUSH,
             0b01010000: self.CALL,
             0b00010001: self.RET,
+            0b10100000: self.ADD,
         }
 
     def __init__(self):
@@ -153,6 +154,13 @@ class CPU:
             'empty stack - cannot POP'
         self.pc = self.ram_read(self.reg[self.__SP__])
         self.reg[self.__SP__] += 1
+
+    def ADD(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        assert self.operand_b >= 0 and self.operand_b < len(self.reg), \
+            f'invalid register: {self.operand_b}'
+        self.alu('ADD', self.operand_a, self.operand_b)
 
     # memory address register, points to address in ram
     # for target of read / write operations
