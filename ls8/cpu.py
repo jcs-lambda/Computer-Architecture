@@ -2,6 +2,7 @@
 
 import re
 import sys
+import time
 
 
 class CPU:
@@ -87,6 +88,7 @@ class CPU:
         # initialize stack pointer
         self.reg[self.__SP__] = self.__STACK_BASE__
 
+        # initialize opcode map
         self.__init_opcodes__()
 
     def load(self, filename):
@@ -152,8 +154,16 @@ class CPU:
     def run(self):
         """Run the CPU."""
         self.__running__ = True
+        old_time = time.time()
         while self.__running__:
-            self.check_interrupts()
+            # self.trace()
+            if self.reg[self.__IM__]:
+                self.check_interrupts()
+
+            new_time = time.time()
+            if new_time - old_time > 1:
+                self.reg[self.__IS__] |= 0b00000001
+                old_time = new_time
 
             # initialize intruction register and any operands
             self.ir = self.ram_read(self.pc)
@@ -168,7 +178,7 @@ class CPU:
             if self.ir & 0b10000 == 0:
                 # move to next instruction
                 self.pc += 1
-
+        
     def check_interrupts(self):
         """Checks and handles pending interupts."""
         maskedInterrupts = self.reg[self.__IM__] & self.reg[self.__IS__]
@@ -179,7 +189,7 @@ class CPU:
                 self.reg[self.__IM__] = 0  # disable interrupts
                 self.reg[self.__IS__] &= (255 ^ bit)  # clear interrupt
                 self.reg[self.__SP__] -= 1  # push program counter
-                self.ram_write(self.reg[self.__SP__], self.pc + 1)
+                self.ram_write(self.reg[self.__SP__], self.pc)
                 self.reg[self.__SP__] -= 1  # push flags
                 self.ram_write(self.reg[self.__SP__], self.fl)
                 for i in range(7):  # push R0-R6
@@ -223,6 +233,7 @@ class CPU:
         assert self.reg[self.operand_a] <= 7, \
             f'invalid interrupt: {self.reg[self.operand_a]}'
         self.reg[self.__IS__] |= (1 << self.reg[self.operand_a])
+        self.pc += 1
 
     def IRET(self):
         """Return from an interrupt handler.
@@ -399,7 +410,7 @@ class CPU:
         """
         assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
             f'invalid register: {self.operand_a}'
-        print(chr(self.reg[self.operand_a]), end='')
+        print(chr(self.reg[self.operand_a]), end='', flush=True)
 
     def PRN(self):
         """Print numeric value stored in the given register.
