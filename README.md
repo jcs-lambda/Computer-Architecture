@@ -35,5 +35,5 @@
 ### Stretch
 
 - [X] Add the timer interrupt to the LS-8 emulator
-- [ ] Add the keyboard interrupt to the LS-8 emulator
+- [X] Add the keyboard interrupt to the LS-8 emulator
 - [ ] Write an LS-8 assembly program to draw a curved histogram on the screen

@@ -3,6 +3,7 @@
 import re
 import sys
 import time
+from kbhit import KBHit
 
 
 class CPU:
@@ -154,7 +155,8 @@ class CPU:
     def run(self):
         """Run the CPU."""
         self.__running__ = True
-        old_time = time.time()
+        old_time = new_time = time.time()
+        kb = KBHit()
         while self.__running__:
             # self.trace()
             if self.reg[self.__IM__]:
@@ -164,6 +166,11 @@ class CPU:
             if new_time - old_time > 1:
                 self.reg[self.__IS__] |= 0b00000001
                 old_time = new_time
+
+            if kb.kbhit():
+                c = kb.getch()
+                self.ram_write(self.__STACK_BASE__, ord(c[0]))
+                self.reg[self.__IS__] |= 0b00000010
 
             # initialize intruction register and any operands
             self.ir = self.ram_read(self.pc)
@@ -178,7 +185,9 @@ class CPU:
             if self.ir & 0b10000 == 0:
                 # move to next instruction
                 self.pc += 1
-        
+
+        kb.set_normal_term()
+
     def check_interrupts(self):
         """Checks and handles pending interupts."""
         maskedInterrupts = self.reg[self.__IM__] & self.reg[self.__IS__]
@@ -214,9 +223,9 @@ class CPU:
 
     def HLT(self):
         """Halt the CPU (and exit the emulator).
-        
+
         Opcode: 00000001
-        
+
         `HLT`
         """
         self.__running__ = False
@@ -459,7 +468,7 @@ class CPU:
         assert self.operand_b >= 0 and self.operand_b < len(self.reg), \
             f'invalid register: {self.operand_b}'
         self.ram_write(self.reg[self.operand_a], self.reg[self.operand_b])
-    
+
     # END OPCODES ########################################################
 
     # memory address register, points to address in ram
