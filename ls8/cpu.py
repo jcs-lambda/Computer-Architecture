@@ -1,6 +1,7 @@
 """CPU functionality."""
 
-import re, sys
+import re
+import sys
 
 
 class CPU:
@@ -22,6 +23,10 @@ class CPU:
             0b01010000: self.CALL,
             0b00010001: self.RET,
             0b10100000: self.ADD,
+            0b10100111: self.CMP,
+            0b01010101: self.JEQ,
+            0b01010110: self.JNE,
+            0b01010100: self.JMP,
         }
 
     def __init__(self):
@@ -52,7 +57,7 @@ class CPU:
         """Load a program into memory."""
         with open(filename, 'r') as f:
             program = f.read()
-        
+
         address = 0
         for match in re.finditer(r'^[01]{8}', program, re.MULTILINE):
             instruction = match.group()
@@ -66,6 +71,13 @@ class CPU:
             self.reg[reg_a] += self.reg[reg_b]
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
+        elif op == "CMP":
+            if self.reg[reg_a] == self.reg[reg_b]:
+                self.fl = 0b001
+            elif self.reg[reg_a] < self.reg[reg_b]:
+                self.fl = 0b010
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                self.fl = 0b100
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -110,7 +122,7 @@ class CPU:
     # OPCODES
     def HLT(self):
         self.__running__ = False
-    
+
     def LDI(self):
         assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
             f'invalid register: {self.operand_a}'
@@ -162,6 +174,22 @@ class CPU:
             f'invalid register: {self.operand_b}'
         self.alu('ADD', self.operand_a, self.operand_b)
 
+    def CMP(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        assert self.operand_b >= 0 and self.operand_b < len(self.reg), \
+            f'invalid register: {self.operand_b}'
+        self.alu('CMP', self.operand_a, self.operand_b)
+
+    def JEQ(self):
+        pass
+
+    def JNE(self):
+        pass
+
+    def JMP(self):
+        pass
+
     # memory address register, points to address in ram
     # for target of read / write operations
     @property
@@ -170,20 +198,20 @@ class CPU:
 
     @mar.setter
     def mar(self, address):
-        assert address >=0 and address < len(self.ram), \
+        assert address >= 0 and address < len(self.ram), \
             '__memory_address_register__ out of range'
         self.__memory_address_register__ = address & 0xFF
-    
+
     @mar.deleter
     def mar(self):
         self.__memory_address_register__ = 0
-    
+
     # memory data register, hold value read from or to write to
     # ram[memory address register] in read/write operations
     @property
     def mdr(self):
         return self.__memory_data_register__
-    
+
     @mdr.setter
     def mdr(self, value):
         self.__memory_data_register__ = value & 0xFF
@@ -211,7 +239,7 @@ class CPU:
     @property
     def ir(self):
         return self.__instruction_register__
-    
+
     @ir.setter
     def ir(self, opcode):
         assert opcode in self.__OPCODES__, \
@@ -232,7 +260,7 @@ class CPU:
         self.mar = mar
         self.mdr = self.ram[self.mar]
         return self.mdr
-    
+
     def ram_write(self, mar, mdr):
         """Writes a byte to ram."""
         self.mar = mar
