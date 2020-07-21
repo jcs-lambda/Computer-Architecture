@@ -42,6 +42,10 @@ class CPU:
             0b10101101: self.SHR,
             0b10100001: self.SUB,
             0b10101011: self.XOR,
+            0b10000011: self.LD,
+            0b10000100: self.ST,
+            0b00000000: self.NOP,
+            0b01001000: self.PRA,
         }
 
     def __init__(self):
@@ -346,6 +350,28 @@ class CPU:
         assert self.operand_b >= 0 and self.operand_b < len(self.reg), \
             f'invalid register: {self.operand_b}'
         self.alu('XOR', self.operand_a, self.operand_b)
+
+    def LD(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        assert self.operand_b >= 0 and self.operand_b < len(self.reg), \
+            f'invalid register: {self.operand_b}'
+        self.reg[self.operand_a] = self.ram_read(self.reg[self.operand_b])
+
+    def ST(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        assert self.operand_b >= 0 and self.operand_b < len(self.reg), \
+            f'invalid register: {self.operand_b}'
+        self.ram_write(self.reg[self.operand_a], self.reg[self.operand_b])
+
+    def NOP(self):
+        pass
+
+    def PRA(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        print(chr(self.reg[self.operand_a]), end='')
 
     # memory address register, points to address in ram
     # for target of read / write operations
