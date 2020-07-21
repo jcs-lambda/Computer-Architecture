@@ -488,6 +488,8 @@ class CPU:
 
     @pc.setter
     def pc(self, value):
+        assert value >= 0, \
+            'program counter cannot be negative'
         assert value < self.reg[self.__SP__] or value == 0xF7, \
             'program counter cannot point into stack'
         self.__program_counter__ = value & 0xFF
