@@ -19,6 +19,8 @@ class CPU:
             0b10100010: self.MUL,
             0b01000110: self.POP,
             0b01000101: self.PUSH,
+            0b01010000: self.CALL,
+            0b00010001: self.RET,
         }
 
     def __init__(self):
@@ -138,6 +140,19 @@ class CPU:
             f'invalid register: {self.operand_a}'
         self.reg[self.__SP__] -= 1
         self.ram_write(self.reg[self.__SP__], self.reg[self.operand_a])
+
+    def CALL(self):
+        assert self.operand_a >= 0 and self.operand_a < len(self.reg), \
+            f'invalid register: {self.operand_a}'
+        self.reg[self.__SP__] -= 1
+        self.ram_write(self.reg[self.__SP__], self.pc + 1)
+        self.pc = self.reg[self.operand_a]
+
+    def RET(self):
+        assert self.reg[self.__SP__] < self.__STACK_BASE__, \
+            'empty stack - cannot POP'
+        self.pc = self.ram_read(self.reg[self.__SP__])
+        self.reg[self.__SP__] += 1
 
     # memory address register, points to address in ram
     # for target of read / write operations
