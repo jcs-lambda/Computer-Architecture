@@ -216,6 +216,12 @@ def ST(cpu):
         f'invalid register: {cpu.OP_B}'
     cpu.ram_write(cpu.reg[cpu.OP_A], cpu.reg[cpu.OP_B])
 
+@opcode(0b10000000)
+def ADDI(cpu):
+    """Add an immediate value to a register."""
+    cpu.reg[cpu.OP_A] += cpu.OP_B
+    cpu.reg[cpu.OP_A] &= ((1 << BITS) - 1)
+
 
 if __name__ == '__main__':
     print(f'{len(ALU)} ALU opcodes:')

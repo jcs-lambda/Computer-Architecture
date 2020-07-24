@@ -53,6 +53,7 @@ OPCODES = {
     "ST":   {"type": 2, "code": "10000100"},
     "SUB":  {"type": 2, "code": "10100001"},
     "XOR":  {"type": 2, "code": "10101011"},
+    "ADDI": {"type": 8, "code": "10000000"},
 }
 
 # Regex for matching lines
